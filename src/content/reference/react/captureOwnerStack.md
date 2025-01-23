@@ -295,4 +295,45 @@ const root = createRoot(document.getElementById('root'), {
 
 ### The Owner Stack is empty {/*the-owner-stack-is-empty*/}
 
-The call of `captureOwnerStack` happened outside of a React controlled function e.g. in a `setTimeout` callback. During render, Effects, Events, and React error handlers (e.g. `hydrateRoot#options.onCaughtError`) Owner Stacks should be available.
+The call of `captureOwnerStack` happened outside of a React controlled function e.g. in a `setTimeout` callback, after a fetch or in a custom DOM event handler. During render, Effects, Events, and React error handlers (e.g. `hydrateRoot#options.onCaughtError`) Owner Stacks should be available.
+
+In the example below, clicking the button will log an empty Owner Stack because `captureOwnerStack` was called during a custom DOM event handler. The Owner Stack must be captured earlier e.g. by moving the call of `captureOwnerStack` into the Effect body.
+<Sandpack>
+
+```js
+import {captureOwnerStack, useEffect} from 'react';
+
+export default function App() {
+  useEffect(() => {
+    function handleEvent() {
+      console.log('Owner Stack: ', captureOwnerStack());
+    }
+
+    document.addEventListener('click', handleEvent);
+
+    return () => {
+      document.removeEventListener('click', handleEvent);
+    }
+  })
+
+  return <button>Click me to see that Owner Stacks are not available in custom DOM event handlers</button>;
+}
+```
+
+```json package.json hidden
+{
+  "dependencies": {
+    "react": "experimental",
+    "react-dom": "experimental",
+    "react-scripts": "latest"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
+```
+
+</Sandpack>
